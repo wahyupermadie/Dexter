@@ -18,7 +18,9 @@ package com.karumi.dexter;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
@@ -29,43 +31,51 @@ import androidx.core.content.PermissionChecker;
  */
 class AndroidPermissionService {
 
-  /**
-   * @see PermissionChecker#checkSelfPermission
-   */
-  int checkSelfPermission(@NonNull Context context, @NonNull String permission) {
-    return PermissionChecker.checkSelfPermission(context, permission);
-  }
-
-  /**
-   * @see ActivityCompat#requestPermissions
-   */
-  void requestPermissions(@Nullable Activity activity, @NonNull String[] permissions,
-      int requestCode) {
-    if (activity == null) {
-      return;
+    /**
+     * @see PermissionChecker#checkSelfPermission
+     */
+    int checkSelfPermission(@NonNull Context context, @NonNull String permission) {
+        return PermissionChecker.checkSelfPermission(context, permission);
     }
 
-    ActivityCompat.requestPermissions(activity, permissions, requestCode);
-  }
+    /**
+     * @see ActivityCompat#requestPermissions
+     */
+    void requestPermissions(@Nullable Activity activity, @NonNull String[] permissions,
+                            int requestCode) {
+        if (activity == null) {
+            return;
+        }
 
-  /**
-   * @see ActivityCompat#shouldShowRequestPermissionRationale
-   */
-  boolean shouldShowRequestPermissionRationale(@Nullable Activity activity,
-      @NonNull String permission) {
-    if (activity == null) {
-      return false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            for (String permission : permissions) {
+                if (checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
+                    String[] permissionRequest = new String[1];
+                    permissionRequest[0] = permission;
+                    ActivityCompat.requestPermissions(activity, permissionRequest, requestCode);
+                }
+            }
+        }
     }
 
-    return ActivityCompat.shouldShowRequestPermissionRationale(activity, permission);
-  }
+    /**
+     * @see ActivityCompat#shouldShowRequestPermissionRationale
+     */
+    boolean shouldShowRequestPermissionRationale(@Nullable Activity activity,
+                                                 @NonNull String permission) {
+        if (activity == null) {
+            return false;
+        }
 
-  boolean isPermissionPermanentlyDenied(@Nullable Activity activity,
-      @NonNull String permission) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-      return false;
+        return ActivityCompat.shouldShowRequestPermissionRationale(activity, permission);
     }
 
-    return !shouldShowRequestPermissionRationale(activity, permission);
-  }
+    boolean isPermissionPermanentlyDenied(@Nullable Activity activity,
+                                          @NonNull String permission) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return false;
+        }
+
+        return !shouldShowRequestPermissionRationale(activity, permission);
+    }
 }
